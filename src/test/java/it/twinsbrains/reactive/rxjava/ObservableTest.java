@@ -1,10 +1,11 @@
 package it.twinsbrains.reactive.rxjava;
 
-import io.reactivex.Observable;
+import io.reactivex.*;
 import io.reactivex.disposables.Disposable;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
@@ -35,4 +36,22 @@ public class ObservableTest
 
     Thread.sleep(3000);
   }
+
+  @Test
+  void createFactory()
+  {
+    ObservableOnSubscribe<String> source = new ObservableOnSubscribe<>()
+    {
+      @Override public void subscribe(ObservableEmitter<String> emitter) throws Exception
+      {
+        emitter.onNext("ciccio");
+        emitter.onComplete();
+      }
+    };
+    List<String> objects = Observable.create(source).toList().blockingGet();
+
+    assertEquals(objects, asList("ciccio"));
+  }
+
+
 }
