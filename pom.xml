@@ -7,7 +7,7 @@
     <groupId>it.twinsbrain.reactive</groupId>
     <version>1-SNAPSHOT</version>
 
-    <description>An example Java 11 project using Maven and JUnit 5.x</description>
+    <description>An example Java 11 project and RxJava 2 using Maven and JUnit 5.x</description>
 
     <url>https://github.com/itbhp/learning-rx-java.git</url>
 
