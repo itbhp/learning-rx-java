@@ -28,10 +28,8 @@
 
     <ciManagement>
         <system>Pipelines</system>
-        <url>https://github.com/example/test/pipelines</url>
+        <url>https://travis-ci.com/itbhp/learning-rx-java</url>
     </ciManagement>
-
-
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -40,9 +38,15 @@
         <maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
         <maven.jar.plugin.version>3.1.1</maven.jar.plugin.version>
         <maven.surefire.plugin.version>2.22.1</maven.surefire.plugin.version>
+        <rxjava.version>2.2.18</rxjava.version>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>io.reactivex.rxjava2</groupId>
+            <artifactId>rxjava</artifactId>
+            <version>${rxjava.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
