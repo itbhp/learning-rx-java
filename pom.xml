@@ -39,6 +39,7 @@
         <maven.jar.plugin.version>3.1.1</maven.jar.plugin.version>
         <maven.surefire.plugin.version>2.22.1</maven.surefire.plugin.version>
         <rxjava.version>2.2.18</rxjava.version>
+        <hamcrest-library.version>2.1</hamcrest-library.version>
     </properties>
 
     <dependencies>
@@ -51,6 +52,12 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <version>${junit.jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-library</artifactId>
+            <version>${hamcrest-library.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
