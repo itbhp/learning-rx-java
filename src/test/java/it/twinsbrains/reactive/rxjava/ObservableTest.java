@@ -7,11 +7,13 @@ import io.reactivex.observables.ConnectableObservable;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
 
 public class ObservableTest
 {
@@ -117,6 +119,45 @@ public class ObservableTest
         "subscriber1 saw 4",
         "subscriber2 saw 4"
     ));
+  }
+
+  @Test
+  void take()
+  {
+    List<String> output = new LinkedList<>();
+    var subscribe = Observable.interval(300, TimeUnit.MILLISECONDS)
+        .take(2, TimeUnit.SECONDS)
+        .subscribe(i -> output.add("RECEIVED: " + i));
+
+    safeSleep(2000);
+    subscribe.dispose();
+
+    assertEquals(asList(
+        "RECEIVED: 0",
+        "RECEIVED: 1",
+        "RECEIVED: 2",
+        "RECEIVED: 3",
+        "RECEIVED: 4",
+        "RECEIVED: 5"
+    ), output);
+  }
+
+  @Test
+  void takeLast()
+  {
+    List<String> output = new LinkedList<>();
+    var subscribe = Observable.interval(300, TimeUnit.MILLISECONDS)
+        .take(2, TimeUnit.SECONDS)
+        .takeLast(2)
+        .subscribe(i -> output.add("RECEIVED: " + i));
+
+    safeSleep(2000);
+    subscribe.dispose();
+
+    assertEquals(asList(
+        "RECEIVED: 4",
+        "RECEIVED: 5"
+    ), output);
   }
 
   private void safeSleep(int millis)
