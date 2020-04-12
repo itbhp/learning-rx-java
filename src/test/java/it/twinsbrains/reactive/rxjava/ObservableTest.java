@@ -4,6 +4,9 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.observables.ConnectableObservable;
+import io.reactivex.plugins.RxJavaPlugins;
+import io.reactivex.schedulers.TestScheduler;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -11,28 +14,32 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static java.util.Arrays.asList;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTimeout;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class ObservableTest
-{
+public class ObservableTest {
+
+  private TestScheduler scheduler;
+
+  @BeforeEach
+  void setUp() {
+    scheduler = new TestScheduler();
+    RxJavaPlugins.setComputationSchedulerHandler(s -> scheduler);
+  }
+
   @Test
-  void observableAsData()
-  {
+  void observableAsData() {
     Observable<String> strings = Observable
-        .just("Alpha", "Beta", "Gamma", "Delta", "Epsilon");
+      .just("Alpha", "Beta", "Gamma", "Delta", "Epsilon");
 
     Disposable subscribe = strings.subscribe(System.out::println);
     subscribe.dispose();
 
     var firstTwo = strings.buffer(2).blockingFirst();
-   assertEquals(asList("Alpha", "Beta"), firstTwo);
+    assertEquals(List.of("Alpha", "Beta"), firstTwo);
   }
 
   @Test
-  void createFactory()
-  {
+  void createFactory() {
     ObservableOnSubscribe<String> source = emitter -> {
       emitter.onNext("Whatever");
       emitter.onComplete();
@@ -44,26 +51,26 @@ public class ObservableTest
   }
 
   @Test
-  void intervalAreColdObservable()
-  {
+  void intervalAreColdObservable() {
     List<String> output = new LinkedList<>();
 
     Observable<Long> strings = Observable
-        .interval(1, TimeUnit.SECONDS);
+      .interval(1, TimeUnit.SECONDS);
 
     var subscriber1 = strings.subscribe(e -> output.add("subscriber1 saw " + e));
 
-    safeSleep(2_000);
+    scheduler.advanceTimeBy(2, TimeUnit.SECONDS);
 
     var subscriber2 = strings.subscribe(e -> output.add("subscriber2 saw " + e));
 
-    safeSleep(3_000);
+    scheduler.advanceTimeBy(3, TimeUnit.SECONDS);
 
     // dispose both subscriber to stop collecting values
     subscriber1.dispose();
     subscriber2.dispose();
 
-    assertEquals(asList(
+    assertEquals(
+      List.of(
         "subscriber1 saw 0",
         "subscriber1 saw 1",
         "subscriber1 saw 2",
@@ -72,44 +79,46 @@ public class ObservableTest
         "subscriber2 saw 1",
         "subscriber1 saw 4",
         "subscriber2 saw 2"
-    ), output);
+      ),
+      output
+    );
   }
 
   @Test
-  void hotObservableHangingInfinitely()
-  {
+  void hotObservableHangingInfinitely() {
     assertTimeout(Duration.ofSeconds(5), () -> {
       Observable<String> strings = Observable
-          .just("Alpha", "Beta", "Gamma", "Delta", "Epsilon")
-          .publish();
-      strings.subscribe(System.out::println);
+        .just("Alpha", "Beta", "Gamma", "Delta", "Epsilon")
+        .publish();
+      var subscribe = strings.subscribe(System.out::println);
+      assertFalse(subscribe.isDisposed());
       //we should have called strings.connect() to start the observable flow
     });
   }
 
   @Test
-  void hotObservableMultiCast()
-  {
+  void hotObservableMultiCast() {
     List<String> output = new LinkedList<>();
 
     ConnectableObservable<Long> strings = Observable
-        .interval(1, TimeUnit.SECONDS)
-        .publish();
+      .interval(1, TimeUnit.SECONDS)
+      .publish();
 
     var subscriber1 = strings.subscribe(e -> output.add("subscriber1 saw " + e));
     strings.connect();
 
-    safeSleep(2_000);
+    scheduler.advanceTimeBy(2, TimeUnit.SECONDS);
 
     var subscriber2 = strings.subscribe(e -> output.add("subscriber2 saw " + e));
 
-    safeSleep(3_000);
+    scheduler.advanceTimeBy(3, TimeUnit.SECONDS);
 
     // dispose both subscriber to stop collecting values
     subscriber1.dispose();
     subscriber2.dispose();
 
-    assertEquals(output, asList(
+    assertEquals(
+      List.of(
         "subscriber1 saw 0",
         "subscriber1 saw 1",
         "subscriber1 saw 2",
@@ -118,55 +127,46 @@ public class ObservableTest
         "subscriber2 saw 3",
         "subscriber1 saw 4",
         "subscriber2 saw 4"
-    ));
+      ),
+      output
+    );
   }
 
   @Test
-  void take()
-  {
+  void take() {
     List<String> output = new LinkedList<>();
     var subscribe = Observable.interval(300, TimeUnit.MILLISECONDS)
-        .take(2, TimeUnit.SECONDS)
-        .subscribe(i -> output.add("RECEIVED: " + i));
+      .take(2, TimeUnit.SECONDS)
+      .subscribe(i -> output.add("RECEIVED: " + i));
 
-    safeSleep(2000);
+    scheduler.advanceTimeBy(2, TimeUnit.SECONDS);
     subscribe.dispose();
 
-    assertEquals(asList(
+    assertEquals(
+      List.of(
         "RECEIVED: 0",
         "RECEIVED: 1",
         "RECEIVED: 2",
         "RECEIVED: 3",
         "RECEIVED: 4",
         "RECEIVED: 5"
-    ), output);
+      ),
+      output
+    );
   }
 
   @Test
-  void takeLast()
-  {
+  void takeLast() {
     List<String> output = new LinkedList<>();
-    var subscribe = Observable.interval(300, TimeUnit.MILLISECONDS)
-        .take(2, TimeUnit.SECONDS)
-        .takeLast(2)
-        .subscribe(i -> output.add("RECEIVED: " + i));
+    var subscribe = Observable.interval(500, TimeUnit.MILLISECONDS)
+      .take(2, TimeUnit.SECONDS)
+      .takeLast(2)
+      .subscribe(i -> output.add("RECEIVED: " + i));
 
-    safeSleep(2000);
+    scheduler.advanceTimeBy(2, TimeUnit.SECONDS);
     subscribe.dispose();
 
-    assertEquals(asList(
-        "RECEIVED: 4",
-        "RECEIVED: 5"
-    ), output);
-  }
-
-  private void safeSleep(int millis)
-  {
-    try {
-      Thread.sleep(millis);
-    } catch (InterruptedException e){
-      //
-    }
+    assertEquals(List.of("RECEIVED: 1", "RECEIVED: 2"), output);
   }
 
 }
